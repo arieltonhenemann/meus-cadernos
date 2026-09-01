@@ -158,7 +158,29 @@ O usuário pediu um app de anotações com:
 
 ---
 
-## 🐛 Bugs Encontrados e Corrigidos
+## 🛡️ Auditoria de Segurança (pré-produção – 01/09/2026)
+
+### 🔴 CRÍTICO corrigido: perda silenciosa de dados
+Os `INSERT` do app **não enviavam `user_id`** e a coluna não tinha `default`. Como o RLS exige `auth.uid() = user_id`, os registros eram criados mas **bloqueados pelo banco** → o dado aparecia na tela e **sumia para sempre** no reload. Correção dupla:
+- **App** (`src/lib/dataService.ts`): todo `INSERT` agora envia `user_id` via `currentUserId()` (lê o usuário logado; lança erro se não autenticado).
+- **Banco** (`supabase/schema04_security.sql` **PENDENTE de execução no SQL Editor**): `alter column user_id set default auth.uid()` nas 5 tabelas + correção da policy de upload.
+
+### 🔴 CRÍTICO corrigido: upload de imagem aberto
+A policy de upload (`schema03`) permitia que **qualquer usuário autenticado** subisse arquivos em **qualquer pasta** (inclusive de outros usuários) e em **qualquer formato**. Corrigido em `schema04_security.sql`: acesso restrito à própria pasta `auth.uid()::text` e apenas extensões `png/jpg/jpeg/gif/webp`.
+
+### 🟡 Removido: Google OAuth e login por magic link
+Definido que o app usará **somente e-mail/senha**. Removidos do código: botão "Entrar com Google", `signInWithGoogle()` e `signInWithMagicLink()` (`src/pages/AuthPage.tsx` e `src/store/useAuthStore.ts`).
+
+### ✅ Confirmado OK
+- Sem `service_role`/secrets no código-fonte (só chave anon no `.env`).
+- `.env`, `.env.local` e `.vercel` ignorados pelo git (`.env.example` é o único versionado).
+- RLS habilitado nas 5 tabelas com policies por usuário.
+- Bucket `images` listável (HTTP 200) e upload sem login rejeitado (policies ativas).
+
+### ⚠️ CLI (email) ainda precisa
+Acolhimento de novas contas exige **confirmação de e-mail** (Supabase → Authentication → Providers → E-mail: botão "Confirm email" ativo) — fluxo já validado.
+
+---
 
 | Bug | Causa | Correção |
 |---|---|---|
@@ -249,6 +271,12 @@ npm run lint     # verificação (oxlint)
 
 1. **Supabase:** projeto criado, `schema.sql` executado, Email habilitado em Authentication, chaves copiadas para `.env`.
 2. **Vercel:** importar repositório e adicionar variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`; configurar Site URL/Redirect URL no Supabase apontando para a URL da Vercel.
+
+> O **deploy na Vercel já foi realizado** (19/09/2026):
+> - URL de produção: **https://meus-cadernos.vercel.app**
+> - Repositório GitHub: https://github.com/arieltonhenemann/meus-cadernos
+> - Variáveis de ambiente `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` configuradas para produção e preview.
+> - Pendente no Supabase: Site URL/Redirect URL apontando para `https://meus-cadernos.vercel.app`, Realtime (schema02) e Storage (schema03).
 
 Guia completo: [SETUP.md](./SETUP.md)
 

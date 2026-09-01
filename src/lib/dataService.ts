@@ -1,5 +1,12 @@
 import { supabase } from './supabase'
+import { useAuthStore } from '../store/useAuthStore'
 import type { Book, BoardCard, EventItem, Page, Task } from '../types'
+
+function currentUserId(): string {
+  const user = useAuthStore.getState().user
+  if (!user) throw new Error('Usuário não autenticado')
+  return user.id
+}
 
 interface DbBook {
   id: string
@@ -123,6 +130,7 @@ export async function fetchUserData(): Promise<UserData> {
 export async function insertBook(book: Book): Promise<void> {
   await supabase.from('books').insert({
     id: book.id,
+    user_id: currentUserId(),
     name: book.name,
     icon: book.icon,
     color: book.color,
@@ -135,12 +143,12 @@ export async function updateBook(id: string, updates: Partial<Book>): Promise<vo
   if (updates.icon !== undefined) db.icon = updates.icon
   if (updates.color !== undefined) db.color = updates.color
   if (Object.keys(db).length > 0) {
-    await supabase.from('books').update(db).eq('id', id)
+    await supabase.from('books').update(db).eq('id', id).eq('user_id', currentUserId())
   }
 }
 
 export async function deleteBook(id: string): Promise<void> {
-  await supabase.from('books').delete().eq('id', id)
+  await supabase.from('books').delete().eq('id', id).eq('user_id', currentUserId())
 }
 
 // ---------- Pages ----------
@@ -148,6 +156,7 @@ export async function insertPage(bookId: string, page: Page): Promise<void> {
   await supabase.from('pages').insert({
     id: page.id,
     book_id: bookId,
+    user_id: currentUserId(),
     title: page.title,
     icon: page.icon,
     content: page.content,
@@ -172,6 +181,7 @@ export async function deletePage(id: string): Promise<void> {
 export async function insertTask(task: Task): Promise<void> {
   await supabase.from('tasks').insert({
     id: task.id,
+    user_id: currentUserId(),
     title: task.title,
     done: task.done,
     book_id: task.bookId ?? null,
@@ -198,6 +208,7 @@ export async function deleteTask(id: string): Promise<void> {
 export async function insertBoardCard(card: BoardCard): Promise<void> {
   await supabase.from('board_cards').insert({
     id: card.id,
+    user_id: currentUserId(),
     title: card.title,
     description: card.description ?? null,
     status: card.status,
@@ -222,6 +233,7 @@ export async function deleteBoardCard(id: string): Promise<void> {
 export async function insertEvent(event: EventItem): Promise<void> {
   await supabase.from('events').insert({
     id: event.id,
+    user_id: currentUserId(),
     title: event.title,
     date: event.date,
     time: event.time ?? null,
