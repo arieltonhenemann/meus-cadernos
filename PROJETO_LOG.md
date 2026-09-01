@@ -163,7 +163,7 @@ O usuário pediu um app de anotações com:
 ### 🔴 CRÍTICO corrigido: perda silenciosa de dados
 Os `INSERT` do app **não enviavam `user_id`** e a coluna não tinha `default`. Como o RLS exige `auth.uid() = user_id`, os registros eram criados mas **bloqueados pelo banco** → o dado aparecia na tela e **sumia para sempre** no reload. Correção dupla:
 - **App** (`src/lib/dataService.ts`): todo `INSERT` agora envia `user_id` via `currentUserId()` (lê o usuário logado; lança erro se não autenticado).
-- **Banco** (`supabase/schema04_security.sql` **PENDENTE de execução no SQL Editor**): `alter column user_id set default auth.uid()` nas 5 tabelas + correção da policy de upload.
+- **Banco** (`supabase/schema04_security.sql`, **já executado no SQL Editor**): `alter column user_id set default auth.uid()` nas 5 tabelas + correção da policy de upload.
 
 ### 🔴 CRÍTICO corrigido: upload de imagem aberto
 A policy de upload (`schema03`) permitia que **qualquer usuário autenticado** subisse arquivos em **qualquer pasta** (inclusive de outros usuários) e em **qualquer formato**. Corrigido em `schema04_security.sql`: acesso restrito à própria pasta `auth.uid()::text` e apenas extensões `png/jpg/jpeg/gif/webp`.
@@ -200,6 +200,8 @@ Acolhimento de novas contas exige **confirmação de e-mail** (Supabase → Auth
 - **Cadastro de usuário:** criada conta de teste `teste-opencode@gmail.com` → e-mail de confirmação enviado (fluxo OK).
 - **Login:** retornou `email_not_confirmed` — comprova que o provider de e-mail está ativo (é só confirmar via link do e-mail).
 - **Servidor Vite:** inicia e carrega módulos sem erro.
+- **Segurança (01/09/2026):** simulado INSERT e upload; RLS ativo nas 5 tabelas; bucket `images` listável (200) e upload sem login rejeitado; `schema04_security.sql` aplicado no banco com `default auth.uid()` e policy de upload restrita.
+- **Deploy (01/09/2026):** produção publicado em **https://meus-cadernos.vercel.app** (HTTP 200), repositório GitHub sincronizado (branch `main`), varáveis `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` configuradas para produção e preview.
 
 > ⚠️ A conta de teste `teste-opencode@gmail.com` foi criada **sem confirmação** e pode ser removida, se desejado, em Supabase → Authentication → Users.
 
