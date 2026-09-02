@@ -9,6 +9,8 @@ import {
   FileText,
   BookOpen,
   Check,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react'
 import { useAppStore, generateId } from '../store/useAppStore'
 import { RichTextEditor } from '../components/editor/RichTextEditor'
@@ -263,16 +265,44 @@ export function BookPage() {
             </p>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto p-4 md:p-8 min-h-full flex flex-col">
+          <div
+              className={cn(
+                currentPage.fullWidth ? 'max-w-full' : 'max-w-3xl mx-auto',
+                'p-4 md:p-8 min-h-full flex flex-col'
+              )}
+            >
             <div className="flex items-center justify-between mb-4">
-              <button
-                type="button"
-                onClick={handleExportPDF}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Exportar PDF
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={handleExportPDF}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updatePage(book.id, currentPage.id, {
+                      fullWidth: !currentPage.fullWidth,
+                    })
+                  }
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  title={
+                    currentPage.fullWidth
+                      ? 'Voltar a centralizar a página'
+                      : 'Usar a largura inteira da página'
+                  }
+                >
+                  {currentPage.fullWidth ? (
+                    <Minimize2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Maximize2 className="h-3.5 w-3.5" />
+                  )}
+                  {currentPage.fullWidth ? 'Centralizar' : 'Largura total'}
+                </button>
+              </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -306,6 +336,7 @@ export function BookPage() {
             />
 
             <RichTextEditor
+              key={currentPage.id}
               content={currentPage.content}
               onChange={(html) => updatePage(book.id, currentPage.id, { content: html })}
               placeholder="Comece a escrever… Use a barra acima para formatar texto, fazer listas, blocos de código, citações e muito mais."

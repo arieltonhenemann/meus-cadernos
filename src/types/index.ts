@@ -3,6 +3,7 @@ export interface Page {
   title: string
   icon: string
   content: string
+  fullWidth?: boolean
   createdAt: number
   updatedAt: number
 }

@@ -25,6 +25,7 @@ interface DbPage {
   title: string
   icon: string
   content: string
+  full_width: boolean
   created_at: string
   updated_at: string
   sort_order: number
@@ -97,6 +98,7 @@ export async function fetchUserData(): Promise<UserData> {
           title: p.title,
           icon: p.icon,
           content: p.content ?? '',
+          fullWidth: p.full_width ?? false,
           createdAt: new Date(p.created_at).getTime(),
           updatedAt: new Date(p.updated_at).getTime(),
         })),
@@ -162,6 +164,7 @@ export async function insertPage(bookId: string, page: Page): Promise<void> {
     title: page.title,
     icon: page.icon,
     content: page.content,
+    full_width: page.fullWidth ?? false,
   })
 }
 
@@ -170,6 +173,7 @@ export async function updatePage(pageId: string, updates: Partial<Page>): Promis
   if (updates.title !== undefined) db.title = updates.title
   if (updates.icon !== undefined) db.icon = updates.icon
   if (updates.content !== undefined) db.content = updates.content
+  if (updates.fullWidth !== undefined) db.full_width = updates.fullWidth
   if (Object.keys(db).length > 0) {
     await supabase.from('pages').update(db).eq('id', pageId)
   }

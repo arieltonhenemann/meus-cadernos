@@ -175,6 +175,28 @@ O usuário pediu um app de anotações com:
 - **`src/pages/TarefasPage.tsx`** — edição inline do título via botão **lápis** (Enter salva, Esc cancela, perde o foco salva). Extraída action `TaskRow` para as seções Pendentes/Concluídas.
 - Build e lint OK.
 
+### 21. Comandos de barra "/" estilo Notion no editor
+
+- **`src/components/editor/RichTextEditor.tsx`** — digitar **`/`** no início de um bloco abre um **menu flutuante** posicionado abaixo do cursor com as opções; filtrar continua digitando (ex.: `/cod`, `/link`); navegar com **↑/↓**, selecionar com **Enter**, fechar com **Esc** ou clique. O texto `/query` é removido e o bloco é inserido no lugar.
+- Comandos: Texto, Título 1/2/3, Lista, Lista ordenada, **Checklist**, Código (inline), Bloco de código, Citação, Divisor, Imagem (upload) e **Link** (pergunta a URL).
+- **Novos pacotes:** `@tiptap/extension-task-list` e `@tiptap/extension-task-item` (checklist). **Link** (`@tiptap/extension-link`, já disponível) agora habilitado com `autolink` e abertura em nova aba.
+- **Toolbar** — adicionado botão de **Checklist**; placeholder do editor agora sugere `"digite "/" para comandos"`.
+- **`src/index.css`** — estilos do checklist (sem marcador padrão, checkbox alinhado) para o editor e para a exportação em PDF.
+- Build e lint OK.
+
+### 22. Colar print/screenshot direto nas páginas (clipboard)
+
+- **`src/components/editor/RichTextEditor.tsx`** — `editorProps.handlePaste` intercepta o `paste` do editor: se o clipboard contiver uma imagem (ex.: print tirado com `PrtSc`/`Shift+Win+S`/`Ctrl+V`), faz **upload automático para o Supabase** e insere a imagem no cursor. Texto normal continua colando normalmente.
+- Lógica de upload unificada em `uploadAndInsertRef` (compartilhada entre o botão "Inserir imagem" da toolbar, o comando `/imagem` e o paste). Indicador de carregamento na toolbar durante o envio.
+- Build e lint OK.
+
+### 23. Página em largura total
+
+- **`supabase/schema06_page_fullwidth.sql`** — nova coluna `full_width` (boolean, padrão `false`) em `public.pages`. **Aplicar no SQL Editor do Supabase**.
+- **`src/pages/BookPage.tsx`** — botão "Largura total"/"Centralizar" no cabeçalho da página alterna o container entre `max-w-3xl mx-auto` (centralizado) e `max-w-full` (usa o espaço inteiro). Configuração é por página e sincronizada via realtime.
+- `src/types/index.ts` (`fullWidth?`), `src/lib/dataService.ts` (leitura/gravação de `full_width`).
+- Build e lint OK.
+
 ---
 
 ## 🛡️ Auditoria de Segurança (pré-produção – 01/09/2026)
@@ -320,4 +342,4 @@ Guia completo: [SETUP.md](./SETUP.md)
 
 ---
 
-*Última atualização deste log: 01/09/2026 — Kanban estilo Trello (edição + subtarefas, schema05 aplicado no banco) e edição em Agenda (eventos) e Tarefas (título inline). Build e lint OK.
+*Última atualização deste log: 01/09/2026 — Kanban estilo Trello, edição em Agenda/Tarefas, correção do drag & drop, comandos "/" estilo Notion, correção do editor (não apaga mais a digitação), colar print/screenshot diretamente na página e largura total por página. Build e lint OK.
