@@ -27,11 +27,18 @@ export interface Task {
 
 export type BoardStatus = 'todo' | 'doing' | 'done'
 
+export interface BoardSubtask {
+  id: string
+  title: string
+  done: boolean
+}
+
 export interface BoardCard {
   id: string
   title: string
   description?: string
   status: BoardStatus
+  subtasks?: BoardSubtask[]
   createdAt: number
 }
 

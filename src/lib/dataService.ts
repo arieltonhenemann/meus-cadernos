@@ -46,6 +46,7 @@ interface DbBoardCard {
   title: string
   description: string | null
   status: string
+  subtasks: { id: string; title: string; done: boolean }[] | null
   created_at: string
 }
 
@@ -113,6 +114,7 @@ export async function fetchUserData(): Promise<UserData> {
       title: c.title,
       description: c.description ?? undefined,
       status: c.status as BoardCard['status'],
+      subtasks: c.subtasks ?? undefined,
       createdAt: new Date(c.created_at).getTime(),
     })),
     events: events.map((e) => ({
@@ -212,6 +214,7 @@ export async function insertBoardCard(card: BoardCard): Promise<void> {
     title: card.title,
     description: card.description ?? null,
     status: card.status,
+    subtasks: card.subtasks ?? [],
   })
 }
 
@@ -220,6 +223,7 @@ export async function updateBoardCard(id: string, updates: Partial<BoardCard>): 
   if (updates.title !== undefined) db.title = updates.title
   if (updates.description !== undefined) db.description = updates.description
   if (updates.status !== undefined) db.status = updates.status
+  if (updates.subtasks !== undefined) db.subtasks = updates.subtasks
   if (Object.keys(db).length > 0) {
     await supabase.from('board_cards').update(db).eq('id', id)
   }
@@ -239,6 +243,17 @@ export async function insertEvent(event: EventItem): Promise<void> {
     time: event.time ?? null,
     color: event.color,
   })
+}
+
+export async function updateEvent(id: string, updates: Partial<EventItem>): Promise<void> {
+  const db: Record<string, unknown> = {}
+  if (updates.title !== undefined) db.title = updates.title
+  if (updates.date !== undefined) db.date = updates.date
+  if (updates.time !== undefined) db.time = updates.time
+  if (updates.color !== undefined) db.color = updates.color
+  if (Object.keys(db).length > 0) {
+    await supabase.from('events').update(db).eq('id', id)
+  }
 }
 
 export async function deleteEvent(id: string): Promise<void> {

@@ -156,6 +156,25 @@ O usuário pediu um app de anotações com:
 - `src/pages/BookPage.tsx` — diálogo "Nova página" agora tem seletor visual de modelo (grade com cards clicáveis, caixa com scroll), título opcional e botão Criar. A página é criada com o conteúdo do modelo escolhido.
 - Modelos são compatíveis com as extensões existentes do editor (StarterKit), então renderizam corretamente também na exportação de PDF.
 
+### 19. Kanban estilo Trello (edição de cartões + subtarefas)
+
+- **`src/types/index.ts`** — novo tipo `BoardSubtask` (`id`, `title`, `done`) e campo `subtasks?: BoardSubtask[]` em `BoardCard`.
+- **Banco** (`supabase/schema05_kanban_subtasks.sql`, **pendente de execução no SQL Editor**) — adiciona a coluna `subtasks jsonb default '[]'` em `board_cards`. Como o app já usa Realtime em `board_cards`, mudanças nas subtarefas sincronizam sozinhas entre dispositivos.
+- **`src/lib/dataService.ts`** — `insertBoardCard`, `updateBoardCard` e `fetchUserData` agora gravam/lêem a lista de subtarefas (JSON).
+- **`src/pages/KanbanPage.tsx`** — rede desenhada no estilo Trello:
+  - Clique em um cartão abre um **diálogo de edição** com título, descrição e checklist editáveis (título/descrição salvos ao fechar; subtarefas salvas a cada ação).
+  - **Checklist de subtarefas**: alternar conclusão (riscado), adicionar e excluir itens diretamente no diálogo.
+  - O cartão na coluna mostra a **descrição** (2 linhas máx.) e uma **barra de progresso** com contador `x/y` de subtarefas concluídas.
+- Build e lint validados (apenas avisos já conhecidos: fast-refresh e set-state-in-effect intencional).
+
+### 20. Edição na Agenda e nas Tarefas
+
+- **Store** (`src/store/useAppStore.ts`) — novas actions `updateTask` e `updateEvent` (atualizam estado local + banco).
+- **`src/lib/dataService.ts`** — nova função `updateEvent` (título, data, hora, cor); `updateTask` já existia.
+- **`src/pages/AgendaPage.tsx`** — clicar num evento do dia abre o **diálogo de edição** (título, data, hora, cor), com botão **Excluir** no diálogo; o form de criar/editar é o mesmo (`openCreate`/`openEdit`). Salvar move o destaque do calendário para a data editada.
+- **`src/pages/TarefasPage.tsx`** — edição inline do título via botão **lápis** (Enter salva, Esc cancela, perde o foco salva). Extraída action `TaskRow` para as seções Pendentes/Concluídas.
+- Build e lint OK.
+
 ---
 
 ## 🛡️ Auditoria de Segurança (pré-produção – 01/09/2026)
@@ -223,7 +242,11 @@ meu-programa-de-anotações/
 ├── README.md                   # Documentação geral
 ├── SETUP.md                    # Guia Supabase + Vercel
 ├── supabase/
-│   └── schema.sql              # Script de criação das tabelas
+│   └── schema01.sql            # Script de criação das tabelas
+│   └── schema02_realtime.sql   # Habilitar Realtime nas tabelas
+│   └── schema03_storage_images.sql # Bucket e policies de upload de imagens
+│   └── schema04_security.sql   # Default user_id e policy de upload restrita
+│   └── schema05_kanban_subtasks.sql # Coluna subtasks (jsonb) no Kanban
 └── src/
     ├── components/
     │   ├── editor/RichTextEditor.tsx
@@ -297,4 +320,4 @@ Guia completo: [SETUP.md](./SETUP.md)
 
 ---
 
-*Última atualização deste log: 01/09/2026 — Todos os 6 próximos passos concluídos (Google OAuth código, modo escuro, realtime, upload de imagens, responsividade mobile e modelos de páginas); build e lint OK.
+*Última atualização deste log: 01/09/2026 — Kanban estilo Trello (edição + subtarefas, schema05 aplicado no banco) e edição em Agenda (eventos) e Tarefas (título inline). Build e lint OK.

@@ -16,6 +16,7 @@ import {
   updateBoardCard as dbUpdateBoardCard,
   deleteBoardCard as dbDeleteBoardCard,
   insertEvent,
+  updateEvent as dbUpdateEvent,
   deleteEvent as dbDeleteEvent,
 } from '../lib/dataService'
 import { ensureBucket } from '../lib/storage'
@@ -42,6 +43,7 @@ interface AppState {
 
   addTask: (task: Task) => void
   toggleTask: (id: string) => void
+  updateTask: (id: string, updates: Partial<Task>) => void
   deleteTask: (id: string) => void
 
   addBoardCard: (card: BoardCard) => void
@@ -49,6 +51,7 @@ interface AppState {
   deleteBoardCard: (id: string) => void
 
   addEvent: (event: EventItem) => void
+  updateEvent: (id: string, updates: Partial<EventItem>) => void
   deleteEvent: (id: string) => void
 
   applyRealtimeEvent: () => void
@@ -156,6 +159,12 @@ export const useAppStore = create<AppState>()(
         }))
         dbUpdateTask(id, { done: !task.done }).catch(console.error)
       },
+      updateTask: (id, updates) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+        }))
+        dbUpdateTask(id, updates).catch(console.error)
+      },
       deleteTask: (id) => {
         set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }))
         dbDeleteTask(id).catch(console.error)
@@ -179,6 +188,12 @@ export const useAppStore = create<AppState>()(
       addEvent: (event) => {
         set((s) => ({ events: [...s.events, event] }))
         insertEvent(event).catch(console.error)
+      },
+      updateEvent: (id, updates) => {
+        set((s) => ({
+          events: s.events.map((e) => (e.id === id ? { ...e, ...updates } : e)),
+        }))
+        dbUpdateEvent(id, updates).catch(console.error)
       },
       deleteEvent: (id) => {
         set((s) => ({ events: s.events.filter((e) => e.id !== id) }))

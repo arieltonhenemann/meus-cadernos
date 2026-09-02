@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Calendar, Plus, Trash2 } from 'lucide-react'
 import { useAppStore, generateId } from '../store/useAppStore'
+import type { EventItem } from '../types'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog'
@@ -15,7 +16,7 @@ const MONTHS = [
 ]
 
 export function AgendaPage() {
-  const { events, addEvent, deleteEvent } = useAppStore()
+  const { events, addEvent, updateEvent, deleteEvent } = useAppStore()
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date()
     return { year: now.getFullYear(), month: now.getMonth() }
@@ -23,8 +24,12 @@ export function AgendaPage() {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [title, setTitle] = useState('')
   const [time, setTime] = useState('')
+  const [date, setDate] = useState('')
   const [color, setColor] = useState(COLORS[0])
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  const editingEvent = events.find((e) => e.id === editingId) ?? null
 
   const { year, month } = currentMonth
 
@@ -49,18 +54,44 @@ export function AgendaPage() {
     })
   }
 
-  const handleAddEvent = () => {
-    if (!title.trim()) return
-    addEvent({
-      id: generateId(),
-      title: title.trim(),
-      date: selectedDate,
-      time: time || undefined,
-      color,
-      createdAt: Date.now(),
-    })
+  const openCreate = () => {
+    setEditingId(null)
     setTitle('')
     setTime('')
+    setDate(selectedDate)
+    setColor(COLORS[0])
+    setDialogOpen(true)
+  }
+
+  const openEdit = (event: EventItem) => {
+    setEditingId(event.id)
+    setTitle(event.title)
+    setTime(event.time ?? '')
+    setDate(event.date)
+    setColor(event.color)
+    setDialogOpen(true)
+  }
+
+  const handleSaveEvent = () => {
+    if (!title.trim() || !date) return
+    if (editingEvent) {
+      updateEvent(editingEvent.id, {
+        title: title.trim(),
+        date,
+        time: time || undefined,
+        color,
+      })
+    } else {
+      addEvent({
+        id: generateId(),
+        title: title.trim(),
+        date,
+        time: time || undefined,
+        color,
+        createdAt: Date.now(),
+      })
+    }
+    setSelectedDate(date)
     setDialogOpen(false)
   }
 
@@ -77,25 +108,26 @@ export function AgendaPage() {
         </h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="md:size-auto">
+            <Button size="sm" className="md:size-auto" onClick={openCreate}>
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Novo evento</span>
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Novo evento</DialogTitle>
+              <DialogTitle>{editingEvent ? 'Editar evento' : 'Novo evento'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <Input
                 placeholder="Título do evento..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveEvent()}
                 autoFocus
               />
               <div className="flex gap-2">
                 <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-                <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-2 block">Cor</label>
@@ -113,9 +145,24 @@ export function AgendaPage() {
                   ))}
                 </div>
               </div>
-              <Button onClick={handleAddEvent} className="w-full">
-                Adicionar
-              </Button>
+              <div className="flex gap-2">
+                {editingEvent && (
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      deleteEvent(editingEvent.id)
+                      setDialogOpen(false)
+                    }}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Excluir
+                  </Button>
+                )}
+                <Button onClick={handleSaveEvent} className="flex-1">
+                  {editingEvent ? 'Salvar' : 'Adicionar'}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -199,7 +246,8 @@ export function AgendaPage() {
               {selectedEvents.map((e) => (
                 <li
                   key={e.id}
-                  className="flex items-center gap-3 p-2 rounded-md border border-border group"
+                  onClick={() => openEdit(e)}
+                  className="flex items-center gap-3 p-2 rounded-md border border-border group cursor-pointer hover:border-primary/40 hover:bg-accent/50 transition-colors"
                 >
                   <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: e.color }} />
                   <div className="flex-1 min-w-0">
@@ -207,7 +255,10 @@ export function AgendaPage() {
                     {e.time && <div className="text-xs text-muted-foreground">{e.time}</div>}
                   </div>
                   <button
-                    onClick={() => deleteEvent(e.id)}
+                    onClick={(ev) => {
+                      ev.stopPropagation()
+                      deleteEvent(e.id)
+                    }}
                     className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 className="h-4 w-4" />
